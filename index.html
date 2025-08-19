@@ -521,8 +521,12 @@
                     confetti.style.animation = `confetti-pop 0.3s forwards,
                                                confetti-fall ${duration}s ${delay}s forwards`;
 
-                    // Remove element when animation completes
-                    confetti.addEventListener('animationend', () => confetti.remove());
+                  // Remove ONLY after the fall animation finishes
+confetti.addEventListener('animationend', (e) => {
+  if (e.animationName === 'confetti-fall') {
+    confetti.remove();
+  }
+});
                 }
             }
             
