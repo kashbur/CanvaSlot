@@ -377,8 +377,9 @@
                 rainbow: 'https://i.postimg.cc/65ZMS2hs/rainbow.png',
                 teddybear: 'https://i.postimg.cc/Mp8986sn/teddy-bear.png'
             };
-            
+
             const iconsList = Object.values(icons);
+            const restricted = [icons.boy, icons.pinkballoon, icons.blueballoon];
             
             let isSpinning = false;
             let spinCount = 0;
@@ -584,16 +585,12 @@
                     icon1 = getRandomIcon();
                     
                     // Second icon can be anything except if it would create a potential triple
-                    if (icon1 === icons.boy || icon1 === icons.pinkballoon || icon1 === icons.blueballoon) {
-                        icon2 = getRandomIconExcept([icon1]);
-                    } else {
-                        icon2 = getRandomIcon();
-                    }
-                    
+                    icon2 = restricted.includes(icon1)
+                        ? getRandomIconExcept([icon1])
+                        : getRandomIcon();
+
                     // Third icon needs to avoid creating a triple of restricted icons
-                    if ((icon1 === icons.boy && icon2 === icons.boy) || 
-                        (icon1 === icons.pinkballoon && icon2 === icons.pinkballoon) || 
-                        (icon1 === icons.blueballoon && icon2 === icons.blueballoon)) {
+                    if (restricted.includes(icon1) && icon1 === icon2) {
                         icon3 = getRandomIconExcept([icon1]);
                     } else {
                         icon3 = getRandomIcon();
