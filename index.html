@@ -281,12 +281,12 @@
         }
         
         @keyframes confetti-fall {
-            0% { 
+            0% {
                 transform: translateY(0) rotate(0deg);
                 opacity: 0.8;
             }
-            100% { 
-                transform: translateY(100vh) rotate(720deg);
+            100% {
+                transform: translateY(var(--confetti-fall-distance, 100%)) rotate(720deg);
                 opacity: 0;
             }
         }
@@ -469,6 +469,7 @@
                 const confettiCount = 150;
                 const container = document.querySelector('.slot-machine-container');
                 const containerRect = container.getBoundingClientRect();
+                const containerHeight = containerRect.height;
                 
                 // Clear any existing confetti
                 const existingConfetti = document.querySelectorAll('.confetti');
@@ -506,6 +507,7 @@
                     confetti.style.width = `${width}px`;
                     confetti.style.height = `${height}px`;
                     confetti.style.backgroundColor = color;
+                    confetti.style.setProperty('--confetti-fall-distance', `${containerHeight}px`);
                     
                     // Add to container
                     container.appendChild(confetti);
