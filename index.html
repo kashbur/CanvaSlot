@@ -403,21 +403,25 @@
                 const reelStrip = document.createElement('div');
                 reelStrip.className = 'reel-strip';
                 
+                const fragment = document.createDocumentFragment();
+
                 // Create multiple items for the spinning effect
                 for (let i = 0; i < 15; i++) {
                     const reelItem = document.createElement('div');
                     reelItem.className = 'reel-item';
                     reelItem.style.height = '100%';
-                    
+
                     const img = document.createElement('img');
                     img.src = getRandomIcon();
                     img.alt = 'Slot Icon';
                     img.loading = 'eager'; // Ensure images load quickly
-                    
+
                     reelItem.appendChild(img);
-                    reelStrip.appendChild(reelItem);
+                    fragment.appendChild(reelItem);
                 }
-                
+
+                reelStrip.appendChild(fragment);
+
                 reel.appendChild(reelStrip);
                 return reelStrip;
             }
