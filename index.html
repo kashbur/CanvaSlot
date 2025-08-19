@@ -281,12 +281,15 @@
         }
         
         @keyframes confetti-fall {
-            0% { 
-                transform: translateY(0) rotate(0deg);
+            0% {
+                transform: translateX(0) translateY(0) rotate(0deg);
                 opacity: 0.8;
             }
-            100% { 
-                transform: translateY(100vh) rotate(720deg);
+            50% {
+                transform: translateX(var(--drift)) translateY(50vh) rotate(calc(var(--rotation) / 2));
+            }
+            100% {
+                transform: translateX(calc(-1 * var(--drift))) translateY(100vh) rotate(var(--rotation));
                 opacity: 0;
             }
         }
@@ -506,14 +509,20 @@
                     confetti.style.width = `${width}px`;
                     confetti.style.height = `${height}px`;
                     confetti.style.backgroundColor = color;
-                    
+
+                    // Unique horizontal drift and rotation for each piece
+                    const drift = (Math.random() - 0.5) * 100; // -50px to 50px sway
+                    const rotation = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 720 + 360);
+                    confetti.style.setProperty('--drift', `${drift}px`);
+                    confetti.style.setProperty('--rotation', `${rotation}deg`);
+
                     // Add to container
                     container.appendChild(confetti);
-                    
+
                     // Use direct animation instead of transitions for better mobile performance
                     const duration = Math.random() * 2 + 1.5;
                     const delay = Math.random() * 0.5;
-                    
+
                     // Use CSS animation for better performance on mobile
                     confetti.style.animation = `confetti-pop 0.3s forwards,
                                                confetti-fall ${duration}s ${delay}s forwards`;
