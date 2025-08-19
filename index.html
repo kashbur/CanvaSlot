@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Baby Slot Machine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            touch-action: none;
+            background-color: #f5f5f5;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .slot-machine-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://i.postimg.cc/DZYNHhrp/slot-machine.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            max-width: 100vw;
+            max-height: 100vh;
+            margin: auto;
+        }
+        
+        /* For portrait orientation (typical mobile) */
+        @media (orientation: portrait) {
+            .slot-machine-container {
+                width: 100vw;
+                height: auto;
+                aspect-ratio: 1080/1920;
+                max-height: 100vh;
+            }
+        }
+        
+        /* For landscape orientation */
+        @media (orientation: landscape) {
+            .slot-machine-container {
+                height: 100vh;
+                width: auto;
+                aspect-ratio: 1080/1920;
+                max-width: 100vw;
+            }
+        }
+        
+        /* For very small screens */
+        @media (max-width: 320px), (max-height: 480px) {
+            .slot-machine-container {
+                transform: scale(0.9);
+                transform-origin: center center;
+            }
+        }
+        
+        .reel {
+            position: absolute;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        
+        /* Base positions for reels */
+        .reel-1 {
+            top: 33.9%;
+            left: 20.4%;
+            width: 19.2%;
+            height: 14.4%;
+        }
+        
+        .reel-2 {
+            top: 33.7%;
+            left: 42.7%;
+            width: 19.2%;
+            height: 14.4%;
+        }
+        
+        .reel-3 {
+            top: 33.9%;
+            left: 65.1%;
+            width: 19.2%;
+            height: 14.4%;
+        }
+        
+        /* Adjust reel positions for very small screens */
+        @media (max-width: 360px), (max-height: 640px) {
+            .reel-1, .reel-2, .reel-3 {
+                height: 13%;
+            }
+        }
+        
+        .reel-strip {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.5s ease-out;
+        }
+        
+        .reel-item {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .reel-item img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+        
+        .spin-button-container {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            width: 22.5%;
+            transform: translateX(-50%);
+            z-index: 10;
+            overflow: visible;
+        }
+        
+        /* Adjust button size for different screens */
+        @media (max-width: 480px) {
+            .spin-button-container {
+                width: 25%;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .spin-button-container {
+                width: 20%;
+            }
+        }
+        
+        .spin-button {
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.08s ease-out;
+            filter: drop-shadow(0 6px 3px rgba(0, 0, 0, 0.35));
+            will-change: transform, filter;
+            overflow: visible;
+        }
+        
+        .spin-button:hover {
+            transform: translateY(-2px);
+            filter: drop-shadow(0 8px 4px rgba(0, 0, 0, 0.4));
+        }
+        
+        .spin-button:active {
+            transform: translateY(3px);
+            filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.2));
+        }
+        
+        .spin-button.clicked {
+            animation: button-click 0.2s ease-out;
+        }
+        
+        @keyframes button-click {
+            0% {
+                transform: translateY(0);
+                filter: drop-shadow(0 6px 3px rgba(0, 0, 0, 0.35));
+            }
+            50% {
+                transform: translateY(3px);
+                filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.2));
+            }
+            100% {
+                transform: translateY(0);
+                filter: drop-shadow(0 6px 3px rgba(0, 0, 0, 0.35));
+            }
+        }
+        
+        .spin-button img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 0;
+        }
+        
+        .result-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 192, 203, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        .result-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(2rem, 12vw, 8rem);
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+            transform: scale(0);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            letter-spacing: 2px;
+            padding: 0 20px;
+        }
+        
+        /* Adjust text size for different orientations */
+        @media (orientation: portrait) {
+            .result-text {
+                font-size: clamp(2rem, 15vw, 8rem);
+            }
+        }
+        
+        @media (orientation: landscape) {
+            .result-text {
+                font-size: clamp(2rem, 12vh, 8rem);
+            }
+        }
+        
+        /* Smaller text for very small screens */
+        @media (max-width: 320px), (max-height: 480px) {
+            .result-text {
+                font-size: clamp(1.5rem, 10vw, 6rem);
+            }
+        }
+        
+        .show-result {
+            opacity: 1;
+        }
+        
+        .show-result .result-text {
+            transform: scale(1);
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #ff69b4;
+            opacity: 0.8;
+            z-index: 25;
+            will-change: transform, top, left;
+        }
+        
+        .spinning {
+            animation: spin-down 0.2s linear infinite;
+        }
+        
+        @keyframes spin-down {
+            0% {
+                transform: translateY(-33.33%);
+            }
+            100% {
+                transform: translateY(0%);
+            }
+        }
+        
+        @keyframes confetti-pop {
+            0% { transform: scale(0) rotate(0deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+        
+        @keyframes confetti-fall {
+            0% { 
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.8;
+            }
+            100% { 
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slot-machine-container" id="slotMachineContainer">
+        <div class="reel reel-1" id="reel1"></div>
+        <div class="reel reel-2" id="reel2"></div>
+        <div class="reel reel-3" id="reel3"></div>
+        <div class="spin-button-container">
+            <div class="spin-button" id="spinButton">
+                <img src="https://i.postimg.cc/7hkzxGn5/Blue-Phone-Text-Message-Instagram-Reel-Video.png" alt="Spin Button">
+            </div>
+        </div>
+        <div class="result-overlay" id="resultOverlay">
+            <div class="result-text">IT'S A GIRL!</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const reel1 = document.getElementById('reel1');
+            const reel2 = document.getElementById('reel2');
+            const reel3 = document.getElementById('reel3');
+            const spinButton = document.getElementById('spinButton');
+            const resultOverlay = document.getElementById('resultOverlay');
+            const slotMachineContainer = document.getElementById('slotMachineContainer');
+            
+            // Enhanced resize function for better responsiveness
+            function resizeSlotMachine() {
+                const container = slotMachineContainer;
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                
+                // Original aspect ratio of the slot machine image
+                const aspectRatio = 1080/1920; // width/height
+                
+                // Calculate the optimal size based on screen orientation
+                if (window.matchMedia("(orientation: portrait)").matches) {
+                    // Portrait mode (typical mobile)
+                    const maxWidth = Math.min(windowWidth, windowHeight * aspectRatio);
+                    container.style.width = maxWidth + 'px';
+                    container.style.height = (maxWidth / aspectRatio) + 'px';
+                    
+                    // Check if height exceeds window height
+                    if (parseFloat(container.style.height) > windowHeight) {
+                        container.style.height = windowHeight + 'px';
+                        container.style.width = (windowHeight * aspectRatio) + 'px';
+                    }
+                } else {
+                    // Landscape mode
+                    const maxHeight = Math.min(windowHeight, windowWidth / aspectRatio);
+                    container.style.height = maxHeight + 'px';
+                    container.style.width = (maxHeight * aspectRatio) + 'px';
+                    
+                    // Check if width exceeds window width
+                    if (parseFloat(container.style.width) > windowWidth) {
+                        container.style.width = windowWidth + 'px';
+                        container.style.height = (windowWidth / aspectRatio) + 'px';
+                    }
+                }
+                
+                // Center the container
+                const leftOffset = (windowWidth - parseFloat(container.style.width)) / 2;
+                const topOffset = (windowHeight - parseFloat(container.style.height)) / 2;
+                container.style.position = 'absolute';
+                container.style.left = leftOffset + 'px';
+                container.style.top = topOffset + 'px';
+            }
+            
+            // Call on load, resize and orientation change
+            window.addEventListener('resize', resizeSlotMachine);
+            window.addEventListener('orientationchange', function() {
+                // Small delay to ensure orientation has fully changed
+                setTimeout(resizeSlotMachine, 100);
+            });
+            resizeSlotMachine();
+            
+            const icons = {
+                blueballoon: 'https://i.postimg.cc/y6bFTQmv/blue-balloon.png',
+                bottle: 'https://i.postimg.cc/T38gzKHb/bottle.png',
+                boy: 'https://i.postimg.cc/YSMgSJ7q/boy.png',
+                confetti: 'https://i.postimg.cc/6qk4xPzK/confetti.png',
+                elephant: 'https://i.postimg.cc/BQF1BqQn/elephant.png',
+                girl: 'https://i.postimg.cc/25kbYhd1/girl.png',
+                pinkballoon: 'https://i.postimg.cc/hjwfVYkm/pink-balloon.png',
+                rainbow: 'https://i.postimg.cc/65ZMS2hs/rainbow.png',
+                teddybear: 'https://i.postimg.cc/Mp8986sn/teddy-bear.png'
+            };
+            
+            const iconsList = Object.values(icons);
+            
+            let isSpinning = false;
+            let spinCount = 0;
+            
+            function getRandomIcon() {
+                return iconsList[Math.floor(Math.random() * iconsList.length)];
+            }
+            
+            function getRandomIconExcept(excludeIcons) {
+                let icon;
+                do {
+                    icon = iconsList[Math.floor(Math.random() * iconsList.length)];
+                } while (excludeIcons.includes(icon));
+                return icon;
+            }
+            
+            function createReelStrip(reel) {
+                // Clear the reel
+                reel.innerHTML = '';
+                
+                // Create reel strip
+                const reelStrip = document.createElement('div');
+                reelStrip.className = 'reel-strip';
+                
+                // Create multiple items for the spinning effect
+                for (let i = 0; i < 15; i++) {
+                    const reelItem = document.createElement('div');
+                    reelItem.className = 'reel-item';
+                    reelItem.style.height = '100%';
+                    
+                    const img = document.createElement('img');
+                    img.src = getRandomIcon();
+                    img.alt = 'Slot Icon';
+                    img.loading = 'eager'; // Ensure images load quickly
+                    
+                    reelItem.appendChild(img);
+                    reelStrip.appendChild(reelItem);
+                }
+                
+                reel.appendChild(reelStrip);
+                return reelStrip;
+            }
+            
+            function initializeReels() {
+                createReelStrip(reel1);
+                createReelStrip(reel2);
+                createReelStrip(reel3);
+            }
+            
+            function spinReel(reel, delay, duration, finalIcon) {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        // Remove old strip
+                        reel.innerHTML = '';
+                        
+                        // Create new strip
+                        const reelStrip = createReelStrip(reel);
+                        
+                        // Start spinning animation
+                        reelStrip.classList.add('spinning');
+                        
+                        // Stop spinning after duration
+                        setTimeout(() => {
+                            reelStrip.classList.remove('spinning');
+                            
+                            // Create final result with just one icon
+                            reel.innerHTML = '';
+                            const finalItem = document.createElement('div');
+                            finalItem.className = 'reel-item';
+                            finalItem.style.height = '100%';
+                            
+                            const img = document.createElement('img');
+                            img.src = finalIcon || getRandomIcon();
+                            img.alt = 'Slot Icon';
+                            
+                            finalItem.appendChild(img);
+                            reel.appendChild(finalItem);
+                            
+                            resolve();
+                        }, duration);
+                    }, delay);
+                });
+            }
+            
+            function createConfetti() {
+                const confettiCount = 150;
+                const container = document.querySelector('.slot-machine-container');
+                const containerRect = container.getBoundingClientRect();
+                
+                // Clear any existing confetti
+                const existingConfetti = document.querySelectorAll('.confetti');
+                existingConfetti.forEach(c => c.remove());
+                
+                // Determine if we're on mobile
+                const isMobile = window.innerWidth <= 768 || 
+                                ('ontouchstart' in window) || 
+                                (navigator.maxTouchPoints > 0);
+                
+                for (let i = 0; i < confettiCount; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    
+                    // Random position - start from top for better visibility on all devices
+                    const left = Math.random() * 100;
+                    const top = Math.random() * 20 - 10; // Start above the container
+                    
+                    // Random size - smaller on mobile
+                    const baseSize = isMobile ? 5 : 10;
+                    const size = Math.random() * baseSize + 5;
+                    
+                    // Random shape (square or rectangle)
+                    const isRect = Math.random() > 0.5;
+                    const width = isRect ? size : size * (0.5 + Math.random() * 1.5);
+                    const height = isRect ? size : size * (0.5 + Math.random() * 1.5);
+                    
+                    // Random color (pink shades)
+                    const colors = ['#ff69b4', '#ff8da1', '#ffa6c9', '#ffb6c1', '#ffc0cb', '#ffffff'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    // Apply styles
+                    confetti.style.left = `${left}%`;
+                    confetti.style.top = `${top}%`;
+                    confetti.style.width = `${width}px`;
+                    confetti.style.height = `${height}px`;
+                    confetti.style.backgroundColor = color;
+                    
+                    // Add to container
+                    container.appendChild(confetti);
+                    
+                    // Use direct animation instead of transitions for better mobile performance
+                    const duration = Math.random() * 2 + 1.5;
+                    const delay = Math.random() * 0.5;
+                    
+                    // Use CSS animation for better performance on mobile
+                    confetti.style.animation = `confetti-pop 0.3s forwards, 
+                                               confetti-fall ${duration}s ${delay}s forwards`;
+                    
+                    // Remove after animation
+                    setTimeout(() => {
+                        if (confetti.parentNode) {
+                            confetti.parentNode.removeChild(confetti);
+                        }
+                    }, (duration + delay) * 1000 + 100);
+                }
+            }
+            
+            function showGirlResult() {
+                // Small delay before showing the overlay (150ms)
+                setTimeout(() => {
+                    // Show overlay and create confetti simultaneously
+                    resultOverlay.classList.add('show-result');
+                    createConfetti();
+                    
+                    // Hide after some time
+                    setTimeout(() => {
+                        resultOverlay.classList.remove('show-result');
+                    }, 5000);
+                }, 150);
+            }
+            
+            function animateButtonClick() {
+                // Add pressed state class
+                spinButton.classList.add('clicked');
+                
+                // Remove class after animation completes
+                setTimeout(() => {
+                    spinButton.classList.remove('clicked');
+                }, 200);
+            }
+            
+            async function spinReels() {
+                if (isSpinning) return;
+                isSpinning = true;
+                
+                // Animate button click
+                animateButtonClick();
+                
+                // Disable the button during spinning
+                spinButton.style.pointerEvents = 'none';
+                
+                spinCount++;
+                
+                let icon1, icon2, icon3;
+                
+                // Determine the outcome based on spin count
+                if (spinCount === 3) {
+                    // 3rd spin: boy, boy, confetti
+                    icon1 = icons.boy;
+                    icon2 = icons.boy;
+                    icon3 = icons.confetti;
+                } else if (spinCount === 4) {
+                    // 4th spin: girl, girl, girl
+                    icon1 = icons.girl;
+                    icon2 = icons.girl;
+                    icon3 = icons.girl;
+                } else {
+                    // Random outcome for other spins, but with restrictions:
+                    // 1. NEVER boy-boy-boy
+                    // 2. NEVER pinkballoon-pinkballoon-pinkballoon
+                    // 3. NEVER blueballoon-blueballoon-blueballoon
+                    
+                    // First icon can be anything
+                    icon1 = getRandomIcon();
+                    
+                    // Second icon can be anything except if it would create a potential triple
+                    if (icon1 === icons.boy || icon1 === icons.pinkballoon || icon1 === icons.blueballoon) {
+                        icon2 = getRandomIconExcept([icon1]);
+                    } else {
+                        icon2 = getRandomIcon();
+                    }
+                    
+                    // Third icon needs to avoid creating a triple of restricted icons
+                    if ((icon1 === icons.boy && icon2 === icons.boy) || 
+                        (icon1 === icons.pinkballoon && icon2 === icons.pinkballoon) || 
+                        (icon1 === icons.blueballoon && icon2 === icons.blueballoon)) {
+                        icon3 = getRandomIconExcept([icon1]);
+                    } else {
+                        icon3 = getRandomIcon();
+                    }
+                }
+                
+                // Spin each reel with different timing but faster stops
+                await Promise.all([
+                    spinReel(reel1, 0, 800, icon1),
+                    spinReel(reel2, 0, 1200, icon2),
+                    spinReel(reel3, 0, 1600, icon3)
+                ]);
+                
+                // Show "IT'S A GIRL!" overlay on 4th spin
+                if (spinCount === 4) {
+                    showGirlResult();
+                }
+                
+                // Re-enable the button after spinning
+                spinButton.style.pointerEvents = 'auto';
+                isSpinning = false;
+            }
+            
+            // Initialize the reels
+            initializeReels();
+            
+            // Add click event to spin button
+            spinButton.addEventListener('click', spinReels);
+            
+            // Better touch handling for mobile
+            let touchStarted = false;
+            
+            spinButton.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                touchStarted = true;
+            }, { passive: false });
+            
+            spinButton.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                if (touchStarted) {
+                    spinReels();
+                    touchStarted = false;
+                }
+            }, { passive: false });
+            
+            spinButton.addEventListener('touchcancel', function(e) {
+                touchStarted = false;
+            });
+            
+            // Prevent pinch zoom on mobile
+            document.addEventListener('touchmove', function(e) {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+            
+            // Handle visibility change (tab switching)
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') {
+                    // Re-calculate size when tab becomes visible again
+                    resizeSlotMachine();
+                }
+            });
+            
+            // Preload images for smoother experience
+            function preloadImages() {
+                Object.values(icons).forEach(src => {
+                    const img = new Image();
+                    img.src = src;
+                });
+            }
+            
+            preloadImages();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9716b78065340c37',t:'MTc1NTU3NTc0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
