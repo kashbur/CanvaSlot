@@ -513,15 +513,11 @@
                     const delay = Math.random() * 0.5;
                     
                     // Use CSS animation for better performance on mobile
-                    confetti.style.animation = `confetti-pop 0.3s forwards, 
+                    confetti.style.animation = `confetti-pop 0.3s forwards,
                                                confetti-fall ${duration}s ${delay}s forwards`;
-                    
-                    // Remove after animation
-                    setTimeout(() => {
-                        if (confetti.parentNode) {
-                            confetti.parentNode.removeChild(confetti);
-                        }
-                    }, (duration + delay) * 1000 + 100);
+
+                    // Remove element when animation completes
+                    confetti.addEventListener('animationend', () => confetti.remove());
                 }
             }
             
