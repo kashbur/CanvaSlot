@@ -389,11 +389,8 @@
             }
             
             function getRandomIconExcept(excludeIcons) {
-                let icon;
-                do {
-                    icon = iconsList[Math.floor(Math.random() * iconsList.length)];
-                } while (excludeIcons.includes(icon));
-                return icon;
+                const available = iconsList.filter(icon => !excludeIcons.includes(icon));
+                return available[Math.floor(Math.random() * available.length)];
             }
             
             function createReelStrip(reel) {
