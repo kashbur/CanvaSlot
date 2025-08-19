@@ -256,10 +256,14 @@
             position: absolute;
             width: 10px;
             height: 10px;
-            background-color: #ff69b4;
             opacity: 0.8;
             z-index: 25;
             will-change: transform, top, left;
+        }
+
+        .confetti-inner {
+            width: 100%;
+            height: 100%;
         }
         
         .spinning {
@@ -482,6 +486,8 @@
                 for (let i = 0; i < confettiCount; i++) {
                     const confetti = document.createElement('div');
                     confetti.className = 'confetti';
+                    const confettiInner = document.createElement('div');
+                    confettiInner.className = 'confetti-inner';
                     
                     // Random position - start from top for better visibility on all devices
                     const left = Math.random() * 100;
@@ -505,9 +511,12 @@
                     confetti.style.top = `${top}%`;
                     confetti.style.width = `${width}px`;
                     confetti.style.height = `${height}px`;
-                    confetti.style.backgroundColor = color;
-                    
+                    confettiInner.style.width = '100%';
+                    confettiInner.style.height = '100%';
+                    confettiInner.style.backgroundColor = color;
+
                     // Add to container
+                    confetti.appendChild(confettiInner);
                     container.appendChild(confetti);
                     
                     // Use direct animation instead of transitions for better mobile performance
@@ -515,11 +524,15 @@
                     const delay = Math.random() * 0.5;
                     
                     // Use CSS animation for better performance on mobile
-                    confetti.style.animation = `confetti-pop 0.3s forwards,
-                                               confetti-fall ${duration}s ${delay}s forwards`;
+                    confettiInner.style.animation = 'confetti-pop 0.3s forwards';
+                    confetti.style.animation = `confetti-fall ${duration}s ${delay + 0.3}s forwards`;
 
-                    // Remove element when animation completes
-                    confetti.addEventListener('animationend', () => confetti.remove());
+                    // Remove element when fall animation completes
+                    confetti.addEventListener('animationend', (e) => {
+                        if (e.animationName === 'confetti-fall') {
+                            confetti.remove();
+                        }
+                    });
                 }
             }
             
