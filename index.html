@@ -31,7 +31,7 @@
             position: relative;
             width: 100%;
             height: 100%;
-            background-image: url('https://i.postimg.cc/DZYNHhrp/slot-machine.png');
+            background-image: url('assets/slot-machine.png');
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
@@ -153,11 +153,23 @@
         
         .spin-button {
             width: 100%;
+            padding: 0;
+            border: 0;
+            background: transparent;
             cursor: pointer;
             transition: all 0.08s ease-out;
             filter: drop-shadow(0 6px 3px rgba(0, 0, 0, 0.35));
             will-change: transform, filter;
             overflow: visible;
+        }
+
+        .spin-button:disabled {
+            cursor: default;
+        }
+
+        .spin-button:focus-visible {
+            outline: 3px solid rgba(255, 255, 255, 0.9);
+            outline-offset: 4px;
         }
         
         .spin-button:hover {
@@ -299,23 +311,68 @@
         <div class="reel reel-2" id="reel2"></div>
         <div class="reel reel-3" id="reel3"></div>
         <div class="spin-button-container">
-            <div class="spin-button" id="spinButton">
-                <img src="https://i.postimg.cc/7hkzxGn5/Blue-Phone-Text-Message-Instagram-Reel-Video.png" alt="Spin Button">
-            </div>
+            <button class="spin-button" id="spinButton" type="button" aria-label="Spin the slot machine">
+                <img id="spinButtonImage" src="assets/Blue-Phone-Text-Message-Instagram-Reel-Video.png" alt="">
+            </button>
         </div>
         <div class="result-overlay" id="resultOverlay">
-            <div class="result-text">IT'S A GIRL!</div>
+            <div class="result-text" id="resultText">IT'S A GIRL!</div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const settings = {
+                revealSpin: 4,
+                revealParameterName: 'reveal',
+                backgroundImage: 'assets/slot-machine.png',
+                spinButtonImage: 'assets/Blue-Phone-Text-Message-Instagram-Reel-Video.png',
+                icons: {
+                    blueballoon: 'assets/blue-balloon.png',
+                    bottle: 'assets/bottle.png',
+                    boy: 'assets/boy.png',
+                    confetti: 'assets/confetti.png',
+                    elephant: 'assets/elephant.png',
+                    girl: 'assets/girl.png',
+                    pinkballoon: 'assets/pink-balloon.png',
+                    rainbow: 'assets/rainbow.png',
+                    teddybear: 'assets/teddy-bear.png'
+                },
+                revealOptions: {
+                    1: {
+                        resultText: "IT'S A BOY!",
+                        resultOverlayColor: 'rgba(135, 206, 250, 0.7)',
+                        revealOutcome: ['boy', 'boy', 'boy'],
+                        teaserOutcome: ['girl', 'girl', 'confetti']
+                    },
+                    2: {
+                        resultText: "IT'S A GIRL!",
+                        resultOverlayColor: 'rgba(255, 192, 203, 0.7)',
+                        revealOutcome: ['girl', 'girl', 'girl'],
+                        teaserOutcome: ['boy', 'boy', 'confetti']
+                    }
+                },
+                defaultRevealOption: '2'
+            };
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const requestedRevealOption = urlParams.get(settings.revealParameterName);
+            const revealOption = settings.revealOptions[requestedRevealOption]
+                || settings.revealOptions[settings.defaultRevealOption];
+
             const reel1 = document.getElementById('reel1');
             const reel2 = document.getElementById('reel2');
             const reel3 = document.getElementById('reel3');
             const spinButton = document.getElementById('spinButton');
+            const spinButtonImage = document.getElementById('spinButtonImage');
             const resultOverlay = document.getElementById('resultOverlay');
+            const resultText = document.getElementById('resultText');
             const slotMachineContainer = document.getElementById('slotMachineContainer');
+
+            slotMachineContainer.style.backgroundImage = `url('${settings.backgroundImage}')`;
+            spinButtonImage.src = settings.spinButtonImage;
+            resultText.textContent = revealOption.resultText;
+            resultOverlay.style.backgroundColor = revealOption.resultOverlayColor;
             
             // Enhanced resize function for better responsiveness
             function resizeSlotMachine() {
@@ -367,19 +424,11 @@
             });
             resizeSlotMachine();
             
-            const icons = {
-                blueballoon: 'https://i.postimg.cc/y6bFTQmv/blue-balloon.png',
-                bottle: 'https://i.postimg.cc/T38gzKHb/bottle.png',
-                boy: 'https://i.postimg.cc/YSMgSJ7q/boy.png',
-                confetti: 'https://i.postimg.cc/6qk4xPzK/confetti.png',
-                elephant: 'https://i.postimg.cc/BQF1BqQn/elephant.png',
-                girl: 'https://i.postimg.cc/25kbYhd1/girl.png',
-                pinkballoon: 'https://i.postimg.cc/hjwfVYkm/pink-balloon.png',
-                rainbow: 'https://i.postimg.cc/65ZMS2hs/rainbow.png',
-                teddybear: 'https://i.postimg.cc/Mp8986sn/teddy-bear.png'
-            };
-
+            const icons = settings.icons;
             const iconsList = Object.values(icons);
+            const iconNamesByUrl = Object.fromEntries(
+                Object.entries(icons).map(([name, src]) => [src, name])
+            );
             const restricted = [icons.boy, icons.pinkballoon, icons.blueballoon];
             
             let isSpinning = false;
@@ -392,6 +441,11 @@
             function getRandomIconExcept(excludeIcons) {
                 const available = iconsList.filter(icon => !excludeIcons.includes(icon));
                 return available[Math.floor(Math.random() * available.length)];
+            }
+
+            function getIconLabel(src) {
+                const iconName = iconNamesByUrl[src] || 'baby';
+                return iconName.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/balloon/g, ' balloon');
             }
             
             function createReelStrip(reel) {
@@ -406,13 +460,14 @@
 
                 // Create multiple items for the spinning effect
                 for (let i = 0; i < 15; i++) {
+                    const iconSrc = getRandomIcon();
                     const reelItem = document.createElement('div');
                     reelItem.className = 'reel-item';
                     reelItem.style.height = '100%';
 
                     const img = document.createElement('img');
-                    img.src = getRandomIcon();
-                    img.alt = 'Slot Icon';
+                    img.src = iconSrc;
+                    img.alt = getIconLabel(iconSrc);
                     img.loading = 'eager'; // Ensure images load quickly
 
                     reelItem.appendChild(img);
@@ -452,10 +507,11 @@
                             const finalItem = document.createElement('div');
                             finalItem.className = 'reel-item';
                             finalItem.style.height = '100%';
+                            const finalIconSrc = finalIcon || getRandomIcon();
                             
                             const img = document.createElement('img');
-                            img.src = finalIcon || getRandomIcon();
-                            img.alt = 'Slot Icon';
+                            img.src = finalIconSrc;
+                            img.alt = getIconLabel(finalIconSrc);
                             
                             finalItem.appendChild(img);
                             reel.appendChild(finalItem);
@@ -467,7 +523,6 @@
             }
             
             function createConfetti() {
-                const confettiCount = 150;
                 const container = document.querySelector('.slot-machine-container');
                 const containerRect = container.getBoundingClientRect();
                 const containerHeight = containerRect.height;
@@ -480,6 +535,7 @@
                 const isMobile = window.innerWidth <= 768 || 
                                 ('ontouchstart' in window) || 
                                 (navigator.maxTouchPoints > 0);
+                const confettiCount = isMobile ? 80 : 120;
                 
                 for (let i = 0; i < confettiCount; i++) {
                     const confetti = document.createElement('div');
@@ -521,16 +577,16 @@
                     confetti.style.animation = `confetti-pop 0.3s forwards,
                                                confetti-fall ${duration}s ${delay}s forwards`;
 
-                  // Remove ONLY after the fall animation finishes
-confetti.addEventListener('animationend', (e) => {
-  if (e.animationName === 'confetti-fall') {
-    confetti.remove();
-  }
-});
+                    // Remove only after the fall animation finishes.
+                    confetti.addEventListener('animationend', (e) => {
+                        if (e.animationName === 'confetti-fall') {
+                            confetti.remove();
+                        }
+                    });
                 }
             }
             
-            function showGirlResult() {
+            function showResult() {
                 // Small delay before showing the overlay (150ms)
                 setTimeout(() => {
                     // Show overlay and create confetti simultaneously
@@ -562,23 +618,19 @@ confetti.addEventListener('animationend', (e) => {
                 animateButtonClick();
                 
                 // Disable the button during spinning
-                spinButton.style.pointerEvents = 'none';
+                spinButton.disabled = true;
                 
                 spinCount++;
                 
                 let icon1, icon2, icon3;
                 
                 // Determine the outcome based on spin count
-                if (spinCount === 3) {
-                    // 3rd spin: boy, boy, confetti
-                    icon1 = icons.boy;
-                    icon2 = icons.boy;
-                    icon3 = icons.confetti;
-                } else if (spinCount === 4) {
-                    // 4th spin: girl, girl, girl
-                    icon1 = icons.girl;
-                    icon2 = icons.girl;
-                    icon3 = icons.girl;
+                if (spinCount === settings.revealSpin - 1) {
+                    // 3rd spin: opposite teaser, opposite teaser, confetti
+                    [icon1, icon2, icon3] = revealOption.teaserOutcome.map(iconName => icons[iconName]);
+                } else if (spinCount === settings.revealSpin) {
+                    // 4th spin: final reveal
+                    [icon1, icon2, icon3] = revealOption.revealOutcome.map(iconName => icons[iconName]);
                 } else {
                     // Random outcome for other spins, but with restrictions:
                     // 1. NEVER boy-boy-boy
@@ -608,13 +660,13 @@ confetti.addEventListener('animationend', (e) => {
                     spinReel(reel3, 0, 1600, icon3)
                 ]);
                 
-                // Show "IT'S A GIRL!" overlay on 4th spin
-                if (spinCount === 4) {
-                    showGirlResult();
+                // Show result overlay on reveal spin
+                if (spinCount === settings.revealSpin) {
+                    showResult();
                 }
                 
                 // Re-enable the button after spinning
-                spinButton.style.pointerEvents = 'auto';
+                spinButton.disabled = false;
                 isSpinning = false;
             }
             
@@ -661,7 +713,11 @@ confetti.addEventListener('animationend', (e) => {
             
             // Preload images for smoother experience
             function preloadImages() {
-                Object.values(icons).forEach(src => {
+                [
+                    settings.backgroundImage,
+                    settings.spinButtonImage,
+                    ...Object.values(icons)
+                ].forEach(src => {
                     const img = new Image();
                     img.src = src;
                 });
@@ -670,5 +726,5 @@ confetti.addEventListener('animationend', (e) => {
             preloadImages();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9716b78065340c37',t:'MTc1NTU3NTc0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
